@@ -63,7 +63,15 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
     final userMessage = _textController.text.trim();
     _textController.clear();
     
+    // Add user message immediately to the UI
+    final userChatMessage = ChatMessage(
+      text: userMessage,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+    
     setState(() {
+      _messages.add(userChatMessage);
       _isLoading = true;
       _isTyping = true;
     });
@@ -137,84 +145,90 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
   }
 
   Widget _buildMinimizedChat() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                hintText: 'Ask Any Genset Question',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  _toggleMinimize();
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    _sendMessage();
-                  });
-                }
-              },
-              enabled: !_isLoading,
-            ),
-          ),
-          // Expand icon
-          Container(
-            margin: const EdgeInsets.only(right: 4),
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              shape: BoxShape.circle,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
             ),
-            child: IconButton(
-              onPressed: _toggleMinimize,
-              icon: Icon(
-                Icons.expand_less,
-                color: Colors.grey[600],
-                size: 18,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    decoration: const InputDecoration(
+                      hintText: 'Ask Any Genset Question',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        _toggleMinimize();
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          _sendMessage();
+                        });
+                      }
+                    },
+                    enabled: !_isLoading,
+                  ),
+                ),
+                // Send button
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B1FA2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      if (_textController.text.trim().isNotEmpty) {
+                        _toggleMinimize();
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          _sendMessage();
+                        });
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          // Send button
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF7B1FA2),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              onPressed: () {
-                if (_textController.text.trim().isNotEmpty) {
-                  _toggleMinimize();
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    _sendMessage();
-                  });
-                }
-              },
-              icon: const Icon(
-                Icons.send,
-                color: Colors.white,
-                size: 18,
-              ),
+        ),
+        // Expand icon outside searchbox
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            onPressed: _toggleMinimize,
+            icon: Icon(
+              Icons.expand_less,
+              color: Colors.grey[600],
+              size: 18,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
