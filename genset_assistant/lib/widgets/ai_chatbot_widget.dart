@@ -71,8 +71,8 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
     _scrollToBottom();
 
     try {
-      // Simulate typing indicator
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Reduced typing indicator delay for faster response
+      await Future.delayed(const Duration(milliseconds: 200));
       
       await _chatbotService.sendMessage(userMessage);
       
@@ -114,7 +114,7 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
     }
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -140,78 +140,59 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF7B1FA2),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
+        border: Border.all(color: const Color(0xFF7B1FA2).withOpacity(0.3)),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(25),
-          onTap: _toggleMinimize,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.smart_toy,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'AI Assistant',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Ask me about generators',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.expand_less,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              decoration: const InputDecoration(
+                hintText: 'Ask Any Genset Question',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  _toggleMinimize();
+                  _sendMessage();
+                }
+              },
+              enabled: !_isLoading,
             ),
           ),
-        ),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B1FA2),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: () {
+                if (_textController.text.trim().isNotEmpty) {
+                  _toggleMinimize();
+                  _sendMessage();
+                }
+              },
+              icon: const Icon(
+                Icons.send,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

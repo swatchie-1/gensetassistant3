@@ -798,17 +798,7 @@ class HomeContent extends StatelessWidget {
             child: Column(
               children: [
                 // AI Chatbot and icons
-                Row(
-                  children: [
-                    Expanded(
-                      child: const AIChatbotWidget(),
-                    ),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.notifications, color: Colors.white, size: 24),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.shopping_cart, color: Colors.white, size: 24),
-                  ],
-                ),
+                const AIChatbotWidget(),
                 const SizedBox(height: 20),
               ],
             ),

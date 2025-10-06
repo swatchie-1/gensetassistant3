@@ -93,7 +93,7 @@ $_knowledgeBase'''
         });
       }
 
-      // Make API request
+      // Make API request with optimized parameters for faster response
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: {
@@ -103,10 +103,11 @@ $_knowledgeBase'''
         body: jsonEncode({
           'model': _model,
           'messages': messages,
-          'max_tokens': 1000,
+          'max_tokens': 500, // Reduced for faster response
           'temperature': 0.7,
+          'stream': false,
         }),
-      );
+      ).timeout(const Duration(seconds: 15)); // Added timeout
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
