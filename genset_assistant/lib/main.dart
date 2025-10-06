@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'widgets/news_section.dart';
 import 'widgets/products_section.dart';
+import 'widgets/ai_chatbot_widget.dart';
 
 void main() {
   runApp(const GensetAssistant());
@@ -796,32 +797,11 @@ class HomeContent extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Search bar and icons
+                // AI Chatbot and icons
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search for gensets, parts, etc.',
-                                  border: InputBorder.none,
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: const AIChatbotWidget(),
                     ),
                     const SizedBox(width: 16),
                     const Icon(Icons.notifications, color: Colors.white, size: 24),

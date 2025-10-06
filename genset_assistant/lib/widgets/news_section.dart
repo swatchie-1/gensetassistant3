@@ -105,29 +105,73 @@ class _NewsSectionState extends State<NewsSection> {
     await _fetchArticles(refresh: true);
   }
 
-  Future<void> _launchURL(String url) async {
+  Future<void> _launchURL(String urlStr) async {
     try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(
+      // Clean the URL string by removing any trailing whitespace or "browser" text
+      final cleanedUrlStr = urlStr.trim().replaceAll(RegExp(r'\s+browser\s*$'), '');
+      final uri = Uri.parse(cleanedUrlStr);
+      
+      // Validate scheme to prevent launching potentially harmful URLs
+      if (uri.scheme != 'http' && uri.scheme != 'https') {
+        throw Exception('Invalid URL scheme: ${uri.scheme}');
+      }
+
+      if (!uri.hasAbsolutePath || uri.path.isEmpty) { // Basic check for a path
+         throw Exception('URL has no valid path');
+      }
+      
+      debugPrint('Attempting to launch URL: $uri');
+
+      final canLaunch = await canLaunchUrl(uri);
+      debugPrint('Can launch URL ($uri): $canLaunch');
+      
+      if (canLaunch) {
+        final result = await launchUrl(
           uri,
           mode: LaunchMode.externalApplication,
         );
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not launch article'),
-              backgroundColor: Colors.red,
-            ),
-          );
+        debugPrint('Launch URL result for $uri: $result');
+        
+        if (!result) {
+          throw Exception('Failed to launch URL after canLaunch returned true. Result: $result');
         }
+      } else {
+        // Provide a more detailed error message when canLaunch fails
+        String errorDetails = 'Could not launch URL';
+        if (cleanedUrlStr.isEmpty) {
+            errorDetails += ': URL is empty.';
+        } else if (!uri.hasScheme || !['http', 'https'].contains(uri.scheme)) {
+            errorDetails += ': Invalid scheme (${uri.scheme}). Only http/https are supported by default.';
+        } else if (uri.host.isEmpty) {
+            errorDetails += ': Host is missing.';
+        } else {
+            // Try to give a generic reason if we can't pinpoint it.
+            // This might be due to a lack of an app to handle the specific host/scheme combination,
+            // or other OS-level restrictions.
+            errorDetails += '. No application found to handle this URL (scheme: ${uri.scheme}, host: ${uri.host}).';
+        }
+        throw Exception(errorDetails);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      String message = 'Error launching article';
+      if (e is FormatException) {
+        message = 'Invalid URL format: $urlStr';
+      } else if (e.toString().contains('Invalid URL scheme')) {
+        message = e.toString(); // Use the specific scheme error
+      } else if (e.toString().contains('URL has no valid path')) {
+        message = e.toString(); // Use the specific path error
+      }
+       else {
+         // Catch-all for other exceptions, providing more context.
+          message = 'Could not launch article: ${e.toString()}. URL: $urlStr';
+      }
+
+      debugPrint('Launch URL Error: $message\nStack Trace: $stackTrace'); 
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening article: $e'),
+            content: Text(message),
             backgroundColor: Colors.red,
           ),
         );
@@ -206,10 +250,13 @@ class _NewsSectionState extends State<NewsSection> {
   }
 
   Widget _buildNewsList() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.7;
+    
     return Container(
       constraints: BoxConstraints(
         minHeight: 300,
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+        maxHeight: maxHeight > 300 ? maxHeight : 300,
       ),
       child: CustomScrollView(
         controller: _scrollController,
@@ -532,106 +579,103 @@ class _NewsSectionState extends State<NewsSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Featured image
-              if (article.featuredMedia != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl: article.featuredMedia!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 200,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 200,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.image,
-                        color: Colors.grey,
-                        size: 50,
-                      ),
-                    ),
-                  ),
-                ),
-              if (article.featuredMedia != null) const SizedBox(height: 16),
-              // Title
-              Text(
-                article.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Meta info
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 14,
-                    color: Colors.grey[500],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    article.date,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(
-                    Icons.person,
-                    size: 14,
-                    color: Colors.grey[500],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    article.authorName ?? 'Unknown',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Content
+              // All content inside Expanded will be scrollable
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  child: Text(
-                    article.content.isNotEmpty ? article.content : article.excerpt,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (article.featuredMedia != null)
+                        CachedNetworkImage(
+                          imageUrl: article.featuredMedia!,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+                          ),
+                        ),
+                      if (article.featuredMedia != null)
+                        const SizedBox(height: 16), // Spacing below image
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Title
+                      Text(
+                        article.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Meta info
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            article.date,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Icon(
+                            Icons.person,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            article.authorName ?? 'Unknown',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Content
+                      Text(
+                        article.content.isNotEmpty ? article.content : article.excerpt,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Read more button
+              // Read more button (outside Expanded, so it stays at the bottom)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -666,11 +710,16 @@ class _NewsHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onViewAll,
   });
 
+  // Calculated height based on content (padding + text line heights)
+  // Vertical padding: 8+8 = 16
+  // Text 'X articles' approx. 12 logical pixels, 'View All' approx. 14 logical pixels.
+  // Row with mainAxisAlignment.spaceBetween centers them vertically within available space.
+  // Total is slightly less than 50 (e.g., ~48-49). Using 49.0 for both min and max extent.
   @override
-  double get minExtent => 50.0;
+  double get minExtent => 49.0;
 
   @override
-  double get maxExtent => 50.0;
+  double get maxExtent => 49.0;
 
   @override
   Widget build(

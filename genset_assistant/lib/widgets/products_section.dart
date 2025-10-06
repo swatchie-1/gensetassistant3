@@ -90,7 +90,7 @@ class _ProductsSectionState extends State<ProductsSection> {
       ),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.8,
-        minChildSize: 0.5,
+        minChildSize: 0.6, // Increased minimum height to prevent bottom overflow in modal sheet
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
           padding: const EdgeInsets.all(16),
@@ -284,6 +284,7 @@ class _ProductsSectionState extends State<ProductsSection> {
   Widget _buildProductCard(Product product) {
     return Container(
       width: 200,
+      height: 320, // Increased total card height
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -302,10 +303,11 @@ class _ProductsSectionState extends State<ProductsSection> {
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Allow column to size its content
           children: [
             // Product image
             Expanded(
-              flex: 3,
+              flex: 7, // Increased flex for more image space
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -345,16 +347,20 @@ class _ProductsSectionState extends State<ProductsSection> {
               ),
             ),
             // Product info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Product name
-                    Text(
-                      product.shortName,
+            Container(
+              padding: const EdgeInsets.all(12),
+              constraints: BoxConstraints(
+                minHeight: 0,
+                maxHeight: MediaQuery.of(context).size.height * 0.18, // Max ~17% of screen height for info area
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Allow column to take needed height within constraints
+                children: [
+                  // Product name
+                  Flexible(
+                    child: Text(
+                      product.shortName.isNotEmpty ? product.shortName : 'Unnamed Product',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -362,28 +368,37 @@ class _ProductsSectionState extends State<ProductsSection> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    // Price
-                    Text(
-                      product.formattedPrice,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF7B1FA2),
-                        fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 4),
+                  // Price
+                  Flexible( // Allow price to shrink if needed
+                    child: FittedBox( // Helps text fit within its space
+                      child: Text(
+                        product.formattedPrice.isNotEmpty ? product.formattedPrice : 'Price not available',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF7B1FA2),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1, // Ensure it stays on one line
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    // View button
-                    SizedBox(
+                  ),
+                  const SizedBox(height: 4), // Reduced spacing
+                  // View button - ensure it's not squashed
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: 32, // Minimum height for the button
+                      maxHeight: MediaQuery.of(context).size.height * 0.05, // Max ~5% of screen height
+                    ),
+                    child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => _showProductDetail(product),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF7B1FA2),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8), // Adjusted padding
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -394,8 +409,8 @@ class _ProductsSectionState extends State<ProductsSection> {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
