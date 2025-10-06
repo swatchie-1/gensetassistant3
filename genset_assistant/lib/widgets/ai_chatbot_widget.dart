@@ -166,12 +166,31 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
               onSubmitted: (value) {
                 if (value.trim().isNotEmpty) {
                   _toggleMinimize();
-                  _sendMessage();
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    _sendMessage();
+                  });
                 }
               },
               enabled: !_isLoading,
             ),
           ),
+          // Expand icon
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: _toggleMinimize,
+              icon: Icon(
+                Icons.expand_less,
+                color: Colors.grey[600],
+                size: 18,
+              ),
+            ),
+          ),
+          // Send button
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
@@ -182,7 +201,9 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
               onPressed: () {
                 if (_textController.text.trim().isNotEmpty) {
                   _toggleMinimize();
-                  _sendMessage();
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    _sendMessage();
+                  });
                 }
               },
               icon: const Icon(
@@ -456,14 +477,18 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
               child: TextField(
                 controller: _textController,
                 decoration: const InputDecoration(
-                  hintText: 'Ask about generators...',
+                  hintText: 'Ask Any Genset Question',
                   hintStyle: TextStyle(color: Colors.grey),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
+                onSubmitted: (_) {
+                  if (_textController.text.trim().isNotEmpty) {
+                    _sendMessage();
+                  }
+                },
                 enabled: !_isLoading,
               ),
             ),
@@ -475,7 +500,11 @@ class _AIChatbotWidgetState extends State<AIChatbotWidget> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: _isLoading ? null : _sendMessage,
+              onPressed: _isLoading ? null : () {
+                if (_textController.text.trim().isNotEmpty) {
+                  _sendMessage();
+                }
+              },
               icon: _isLoading
                   ? const SizedBox(
                       width: 20,
