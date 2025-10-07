@@ -18,7 +18,7 @@ class ChatMessage {
 class AIChatbotService {
   static const String _baseUrl = 'https://api.deepseek.com/v1/chat/completions';
   static const String _apiKey = 'sk-fc973493b4a7487681370da8ba7900d5';
-  static const String _model = 'deepseek-chat-lite';
+  static const String _model = 'deepseek-chat';
   
   final List<ChatMessage> _conversationHistory = [];
   String? _knowledgeBase;
