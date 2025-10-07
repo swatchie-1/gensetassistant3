@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'pdf_service.dart';
+import 'knowledge_base_service.dart';
 
 class ChatMessage {
   final String text;
@@ -21,23 +21,18 @@ class AIChatbotService {
   static const String _model = 'deepseek-chat';
   
   final List<ChatMessage> _conversationHistory = [];
-  String? _knowledgeBase;
+  final KnowledgeBaseService _knowledgeService = KnowledgeBaseService();
 
   AIChatbotService() {
-    _loadKnowledgeBase();
+    _initializeKnowledgeBase();
   }
 
-  Future<void> _loadKnowledgeBase() async {
+  Future<void> _initializeKnowledgeBase() async {
     try {
-      // Load PDF content using the PDF service
-      final Map<String, String> pdfContents = await PDFService.getAllPDFContents();
-      final List<String> contentList = pdfContents.values.toList();
-      
-      _knowledgeBase = contentList.join('\n\n');
-      debugPrint('Knowledge base loaded successfully with ${pdfContents.length} documents');
+      await _knowledgeService.initialize();
+      debugPrint('Knowledge base service initialized successfully');
     } catch (e) {
-      debugPrint('Error loading knowledge base: $e');
-      _knowledgeBase = '';
+      debugPrint('Error initializing knowledge base service: $e');
     }
   }
 
@@ -59,6 +54,9 @@ class AIChatbotService {
       );
       _conversationHistory.add(userChatMessage);
 
+      // Get relevant context from knowledge base
+      final relevantContext = _knowledgeService.getRelevantContext(userMessage);
+
       // Prepare messages for API
       final List<Map<String, String>> messages = [
         {
@@ -76,8 +74,7 @@ Your knowledge base includes information about:
 
 Please provide accurate, helpful, and professional responses based on this knowledge. If you don't have specific information about a query, be honest and suggest contacting customer support.
 
-Knowledge Base:
-$_knowledgeBase'''
+$relevantContext'''
         },
       ];
 
