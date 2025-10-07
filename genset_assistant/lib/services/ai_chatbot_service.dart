@@ -81,9 +81,9 @@ $_knowledgeBase'''
         },
       ];
 
-      // Add conversation history (last 10 messages to avoid token limits)
-      final recentHistory = _conversationHistory.length > 10 
-          ? _conversationHistory.sublist(_conversationHistory.length - 10)
+      // Add conversation history (last 5 messages to avoid token limits and timeouts)
+      final recentHistory = _conversationHistory.length > 5 
+          ? _conversationHistory.sublist(_conversationHistory.length - 5)
           : _conversationHistory;
 
       for (final msg in recentHistory) {
@@ -107,7 +107,7 @@ $_knowledgeBase'''
           'temperature': 0.7,
           'stream': false,
         }),
-      ).timeout(const Duration(seconds: 15)); // Added timeout
+      ).timeout(const Duration(seconds: 30)); // Increased timeout for better reliability
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -128,7 +128,11 @@ $_knowledgeBase'''
       }
     } catch (e) {
       debugPrint('Error sending message: $e');
-      return 'Sorry, I\'m having trouble connecting. Please check your internet connection and try again.';
+      if (e.toString().contains('TimeoutException')) {
+        return 'Sorry, the response took too long. Please try again with a shorter question.';
+      } else {
+        return 'Sorry, I\'m having trouble connecting. Please check your internet connection and try again.';
+      }
     }
   }
 
